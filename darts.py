@@ -55,7 +55,7 @@ if __name__ == "__main__" :
             for d3 in singleDartScores :
                 d3total = d1 + d2 + d3
                 a3[d3total] = (d3total, a3[d3total][1]+1, (d1, d2, d3))
-                if d1 in finishingDartScores or d2 in finishingDartScores or d3 in finishingDartScores :
+                if d3 in finishingDartScores :
                     a3Finish[d3total] = (d3total, a3Finish[d3total][1]+1, (d1, d2, d3))
         
     #print(singleDartScores)
