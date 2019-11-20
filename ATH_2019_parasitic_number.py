@@ -34,8 +34,9 @@
 # - two stages:
 #   - initial investigation to try to find answers to the puzzle where the target number has a much smaller numbers of digits,
 #     to find patterns and insights
-#   - using what as learned in the first stage to apply to target numbers with larger numbers of digits, into the range 40-80,
-#     but restricting the possibilities being tried to keep processing time reasonable
+#   - using what as learned in the first stage to apply to target numbers with larger numbers of digits, into the range 
+#     of 40-80 digits required for the correct answer, but restricting the possibilities being tried to keep processing
+#     time reasonable.
 # - terminology / variable names
 #   - n = the number being tested to see if it is the target number
 #   - n_x_9 = 9 times n
@@ -69,10 +70,39 @@ for stage in [1, 2] :
             start = (10 ** (digits-1)) + 9
             end = 10 ** (digits) // 9 + 1
         else :
-            # Set last 5 digits to 0
-            startHead = str(best[1])[:-5] + "00000"
-            start = int(startHead) * 10 + 9
-            end = start + 10 ** 6
+            # Stage 1 output shows the following sequence of 'best' values when looking at numbers with
+            # 4 - 10 digits. They all produce a 'best' value within 100 of a perfect answer, and the 'best'
+            # values seem to be 'converging' towards the same set of leading digits 101123...
+            #
+            #   digits =  4 : best-diff = 19 : best = 1009  
+            #   digits =  5 : best-diff = 29 : best = 10109 
+            #   digits =  6 : best-diff = 40 : best = 101119
+            #   digits =  7 : best-diff = 28 : best = 1011239
+            #   digits =  8 : best-diff =  4 : best = 10112359
+            #   digits =  9 : best-diff = 32 : best = 101123599
+            #   digits = 10 : best-diff = 36 : best = 1011235959
+            #
+            # The stage 1 answers are calculated using the range of all integers with a particular number of digits that end
+            # with a 9 which are less than to 111..111. For 4-9 digits, the calculation is near instant, for 10 digits, the
+            # calculation takes around 20 seconds, and so this approach will not be practical for numbers of digits much above
+            # 10.
+            #
+            # Stage 2 assumes that convergence seen in stage 1 continues with larger number of digits, so that we can use the 
+            # best answer for a given number of digits d to predict what the leading digits will be for d+1 digits. And so 
+            # when looking for the best answer with d+1 digits, we only need to look at a small subset of numbers with 
+            # d+1 digits. Based on stage 1, a fairly conservative approach is to assume that all but the last 5 digits in
+            # a best answer have completely stabilised. As a result, we can determine the range of numbers to try with d+1
+            # digits as follows:
+            # - take the best answer found with d digits
+            # - set the last five digits of this answer to 0  xxxx00000
+            # - add another 0 to end to get the start of the range of numbers to check with d+1 digits xxxx000000
+            # - check all the numbers with d+1 digits from xxxx000000 to xxxx999999, i.e. 1 million (10**6) numbers
+            # - in fact, as before we only need to check numbers whose last digit is a 9
+            #
+            unstableDigits = 5
+            bestLeadDigits = str(best[1])[:-unstableDigits] # Replace last few digits with 0s
+            start = int(bestLeadDigits) * (10 ** (unstableDigits+1)) + 9
+            end = start + (10 ** (unstableDigits+1))
 
         # Reset the best values. NB Do this after calculating the start/end to use, as 
         # for stage 2 we calculate start/end from the best values of the previous loop.        
@@ -96,37 +126,15 @@ for stage in [1, 2] :
         print("digits = %2d : best-diff = %2d : best = %s" % (digits, best[0], best[1]))
         if best[0] == 0 :
             print()
+            print(f"{best[1]:,d}")  # With comma separators
+            print()
+            print()
     
-#
-#$ "C:/Program Files (x86)/Microsoft Visual Studio/Shared/Python36_64/python.exe" c:/Users/owner/Git/PythonMisc/digits.py
-#Breaking at  1119
-#p =  3 range =  1009 2018
-#[(1009, '9081', '9100', 19), (1019, '9171', '9101', 70)]      
-#Breaking at  11119
-#p =  4 range =  10009 20018
-#[(10109, '90981', '91010', 29), (10119, '91071', '91011', 60)]
-#Breaking at  111119
-#p =  5 range =  100009 200018
-#[(101119, '910071', '910111', 40), (101129, '910161', '910112', 49)]
-#Breaking at  1111119
-#p =  6 range =  1000009 2000018
-#[(1011229, '9101061', '9101122', 61), (1011239, '9101151', '9101123', 28)]
-#Breaking at  11111119
-#p =  7 range =  10000009 20000018
-#[(10112349, '91011141', '91011234', 93), (10112359, '91011231', '91011235', 4), (10112369, '91011321', '91011236', 85)]
-#Breaking at  111111119
-#p =  8 range =  100000009 200000018
-#[(101123589, '910112301', '910112358', 57), (101123599, '910112391', '910112359', 32)]
-#Breaking at  1111111119
-#p =  9 range =  1000000009 2000000018
-#[(1011235949, '9101123541', '9101123594', 53), (1011235959, '9101123631', '9101123595', 36)]
-#Breaking at  11111111119
-#p =  10 range =  10000000009 20000000018
-#[(10112359549, '91011235941', '91011235954', 13), (10112359559, '91011236031', '91011235955', 76)]
-#
 
 # Found the answer, with 44 digits.
-#p =  43 range =  10112359550561797752808988764044943820000009 10112359550561797752808988764044943821000009
-#***** Found a 0 ******
-#best =  (0, 10112359550561797752808988764044943820224719)
+#
+# digits = 44 : best-diff =  0 : best = 10112359550561797752808988764044943820224719
+#
+# 10,112,359,550,561,797,752,808,988,764,044,943,820,224,719
+# 
 # https://en.wikipedia.org/wiki/Parasitic_number 
